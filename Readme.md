@@ -59,41 +59,33 @@ Create a **VPC** with the following configuration:
 - Create **2 private subnets** in different Availability Zones:
   - `private-subnet-1`: `10.0.1.0/24`
   - `private-subnet-2`: `10.0.2.0/24`
-- Attach an **Internet Gateway** to the VPC
 
 > Lambda and RDS will be placed in the **private subnets**. Without a NAT gateway, Lambda can reach resources inside the VPC (like RDS), but **not** public internet services.
 
-**Security Groups** — create both inside `inventory-vpc`:
+**Security Group Hardening** — create both inside `inventory-vpc`:
 
-`lambda-sg`
-- Inbound: none
-- Outbound: all traffic `0.0.0.0/0`
+#### `lambda-sg` (Compute Tier)
+- **Inbound Rules**: None. Apply a "Deny All" policy for ingress traffic as Lambda execution is event-triggered, not connection-triggered.
+- **Outbound Rules**: Allow all IPv4 traffic to ensure the function can communicate with internal VPC resources and external APIs.
 
-`rds-sg`
-- Inbound: TCP port `5432`, source `lambda-sg`
-- Outbound: none
+#### `rds-sg` (Data Tier)
+- **Inbound Rules**: Allow traffic **ONLY** from the **lambda security group**. Connect via the **default port** mandated by the database engine.
+- **Outbound Rules**: Strictly **no egress**. The database tier should be isolated from initiating any outbound requests to prevent data exfiltration.
 
 ---
 
 ## Step 1 — RDS PostgreSQL
 
 Create an RDS instance:
-- Engine: PostgreSQL 16, Template: Free tier
+- Engine: PostgreSQL version 16, Template: Free tier
 - Identifier: `inventory-db`, Username: `postgres`
 - **VPC**: `inventory-vpc`, Subnets: `private-subnet-1` and `private-subnet-2`
 - Public access: **No**
-- Security group: `rds-sg`
 
-Once `Available`, copy the **Endpoint**.
 
-**Connect to RDS via CloudShell (VPC mode):**
+**Connect to RDS via CloudShell:**
 
-Open CloudShell, then enable VPC mode: **Actions → Enable VPC networking** → select `inventory-vpc` and a private subnet. Then:
-
-```bash
-sudo dnf install -y postgresql15
-psql -h <RDS_ENDPOINT> -U postgres
-```
+Use these command to create database and tables
 
 ```sql
 CREATE DATABASE inventory_db;
@@ -133,19 +125,9 @@ Create a Standard topic `inventory-low-stock-alert`. Subscribe with **Email** pr
 
 ## Step 4 — Lambda Layer (psycopg2)
 
-In **CloudShell**:
+Create lambda layer based on requirements.txt file inside backend!
 
-```bash
-sudo dnf install -y python3.12 python3.12-pip
-mkdir -p python
-python3.12 -m pip install psycopg2-binary -t python/ --quiet
-zip -r layer.zip python/
-```
-
-Download `layer.zip` (right-click → Download). Upload to **Lambda → Layers**:
-- Name: `psycopg2-layer`, Compatible runtime: `Python 3.12`
-
-Copy the **Layer ARN** after creation.
+Create lambda function to support python3.13 version
 
 ---
 
@@ -238,26 +220,7 @@ cp .env.example .env
 
 ## Step 9 — Deploy to Amplify
 
-Push code to GitHub and connect the repository to **AWS Amplify**. Build configuration:
-
-```yaml
-version: 1
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - cd frontend && npm install
-    build:
-      commands:
-        - cd frontend && npm run build
-  artifacts:
-    baseDirectory: frontend/build
-    files:
-      - '**/*'
-  cache:
-    paths:
-      - frontend/node_modules/**/*
-```
+Push code to GitHub and connect the repository to **AWS Amplify**.
 
 ---
 

@@ -11,7 +11,7 @@ DB_USER = os.environ.get('DATABASE_USER')
 DB_PASS = os.environ.get('DATABASE_PASS')
 SNS_TOPIC_ARN = os.environ.get('SNS_TOPIC_ARN')
 
-sns_client = boto3.client('sns', region_name='us-west-2')
+sns_client = boto3.client('sns', region_name='us-east-1')
 
 def handler(event, context):
     """

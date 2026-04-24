@@ -4,12 +4,13 @@ import boto3
 import uuid
 import os
 from datetime import datetime
+import pandas # you may need to include pandas in lambda layer
 
 # Load configuration from Environment Variables
 DB_HOST = os.environ.get('DATABASE_HOST')
 DB_NAME = os.environ.get('DATABASE_NAME')
-DB_USER = os.environ.get('DATABASE_USER')
-DB_PASS = os.environ.get('DATABASE_PASS')
+DB_USER = os.environ.get('DATABASE_USERNAME')
+DB_PASS = os.environ.get('DATABASE_PASSWORD')
 DYNAMO_TABLE = os.environ.get('DYNAMODB_TABLE')
 
 # AWS clients
