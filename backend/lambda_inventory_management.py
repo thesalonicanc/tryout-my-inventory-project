@@ -17,7 +17,7 @@ DYNAMO_TABLE = os.environ.get('DYNAMODB_TABLE')
 dynamodb = boto3.resource('dynamodb')
 table_log = dynamodb.Table(DYNAMO_TABLE)
 
-def handler(event, context):
+def handle(event, context):
     # 1. Koneksi ke PostgreSQL
     try:
         conn = psycopg2.connect(
